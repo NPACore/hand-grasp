@@ -17,7 +17,7 @@ from lncdtask.lncdtask import LNCDTask, RunDialog, FileLogger, ExternalCom
 import pandas as pd
 
 REST_TEXT = "Relax"   #: text displayed during rest/relax block
-CLASP_TEXT = "Clasp"  #: text displayed in make a fist block
+CLASP_TEXT = "Grasp"  #: text displayed in make a fist block
 DEFAULT_NTRIAL = 10
 DEFAULT_DUR = 20
 TRIGGERS = ["equal"]  #: what key advances the get ready screen?
@@ -35,15 +35,15 @@ def wait_until_monkey(stoptime):
 lncdtask.lncdtask.wait_util = wait_until_monkey
 
 
-class HandClasp(LNCDTask):
+class HandGrasp(LNCDTask):
     """
-    Extending lncdtask to display 'clasp' or 'rest'.
+    Extending lncdtask to display 'grasp' or 'rest'.
     Actual text pulled from onset_df
     """
 
     def __init__(self, *karg, **kargs):
         super().__init__(*karg, **kargs)
-        self.add_event_type("clasp", self.block, ["onset", "text"])
+        self.add_event_type("grasp", self.block, ["onset", "text"])
         self.add_event_type("rest", self.block, ["onset", "text"])
 
     def block(self, onset, msg):
@@ -91,7 +91,7 @@ def gen_timing(n, dur):
     """
     Generate event timing dataframe. Columns: 'onset', 'text','event_name'
     onset goes from 0 to the start time of last block
-    Each row is a block. event_name is 'clasp' or 'rest'
+    Each row is a block. event_name is 'grasp' or 'rest'
     'text' is what to show on screen: either `REST_TEXT` or `CLASP_TEXT`.
     >>> d = gen_timing(10, 5)
     >>> d.shape == (10*2,3) # 3 columns. twice as many events as trials
@@ -99,7 +99,7 @@ def gen_timing(n, dur):
     >>> d.at[0,'onset'] = 0
     >>> d.at[d.shape[0]-1,'onset'] = (10-1)*2*5
     """
-    text = {"clasp": CLASP_TEXT, "rest": REST_TEXT}
+    text = {"grasp": CLASP_TEXT, "rest": REST_TEXT}
     events = text.keys()
     event_list = [
         {"event_name": e,
@@ -116,7 +116,7 @@ def args_to_settings():
     Command line args to make it a little easier to speed run testing.
     """
 
-    parser = argparse.ArgumentParser(description="Hand Clasp Task")
+    parser = argparse.ArgumentParser(description="Hand Grasp Task")
     parser.add_argument("--subjid", default="XYZ", help="Subject ID")
     parser.add_argument("--ntrials", type=int, default=DEFAULT_NTRIAL, help="Number of trials")
     parser.add_argument("--dur", type=float, default=DEFAULT_DUR, help="Duration of each block in seconds")
@@ -155,9 +155,9 @@ def main():
     onset_df = gen_timing(settings['ntrials'], settings['dur'])
 
     # and get a participant object for saving files
-    participant = run_info.mk_participant(['clasp'])
+    participant = run_info.mk_participant(['grasp'])
 
-    hc = HandClasp(onset_df=onset_df, participant=participant)
+    hc = HandGrasp(onset_df=onset_df, participant=participant)
     # escape quits
     hc.gobal_quit_key()
 
