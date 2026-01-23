@@ -9,14 +9,33 @@
 # lncdtask = { git = "https://github.com/LabNeuroCogDevel/lncdtask" }
 # ///
 
+import argparse
+import sys
 import psychopy
-from lncdtask import lncdtask
+import lncdtask
+from lncdtask.lncdtask import LNCDTask, RunDialog, FileLogger, ExternalCom
 import pandas as pd
 
+REST_TEXT = "Relax"   #: text displayed during rest/relax block
+CLASP_TEXT = "Clasp"  #: text displayed in make a fist block
+DEFAULT_NTRIAL = 10
+DEFAULT_DUR = 20
 TRIGGERS = ["equal"]  #: what key advances the get ready screen?
 
 
-class HandClasp(lncdtask.LNCDTask):
+# monkey patch
+def wait_until_monkey(stoptime):
+    """copy of lncdtask.screen.wait_util but with key handing"""
+    while psychopy.core.getTime() < stoptime:
+        print("WAIT")
+        psychopy.event.getKeys(clear=False)
+        psychopy.core.wait(1.001)
+
+# TODO: doesn't work
+lncdtask.lncdtask.wait_util = wait_until_monkey
+
+
+class HandClasp(LNCDTask):
     """
     Extending lncdtask to display 'clasp' or 'rest'.
     Actual text pulled from onset_df
@@ -35,7 +54,8 @@ class HandClasp(lncdtask.LNCDTask):
         # self.trialnum = self.trialnum + 1
         self.msgbox.text = msg
         self.msgbox.draw()
-        return self.flip_at(onset)
+        # NB. msg here gets forward onto marks (file log)
+        return self.flip_at(onset, msg)
 
     def instruction(self, msg):
         """Show message and wait for any keyboard resonse.
@@ -44,14 +64,6 @@ class HandClasp(lncdtask.LNCDTask):
         self.win.flip()
         resp = self.msg(msg)
         return resp
-
-    def get_ready(self, triggers=["equals"]):
-        """Wait for scanner trigger. TODO: add to lncdtask"""
-        print("Waiting for scanner")
-        self.msgbox.text = "Waiting for Scanner to start"
-        self.msgbox.draw()
-        self.win.flip()
-        psychopy.event.waitKeys(keyList=triggers)
 
     def finished(self, msg):
         "Finish message in a new color."
@@ -63,56 +75,136 @@ class HandClasp(lncdtask.LNCDTask):
         # v likewise, return value likely doesn't matter
         return self.msg(msg)
 
+    def get_ready(self, triggers=TRIGGERS):
+        """Wait for scanner trigger.
+        TODO: add to lncdtask. see screen.wait_for_scanner()"""
+        print("Waiting for scanner")
+        self.msgbox.text = "Waiting for Scanner to start"
+        self.msgbox.draw()
+        self.win.flip()
+        psychopy.event.waitKeys(keyList=triggers)
+ 
 
-def gen_timing(n, dur, clasp_text="Clasp", rest_text="Relax"):
+
+
+def gen_timing(n, dur):
     """
-    Generate event timing dataframe. Columns: 'onset', 'text','event'
+    Generate event timing dataframe. Columns: 'onset', 'text','event_name'
+    onset goes from 0 to the start time of last block
+    Each row is a block. event_name is 'clasp' or 'rest'
+    'text' is what to show on screen: either `REST_TEXT` or `CLASP_TEXT`.
     >>> d = gen_timing(10, 5)
     >>> d.shape == (10*2,3) # 3 columns. twice as many events as trials
     # first onset is zero, so off-by-one in total duration
     >>> d.at[0,'onset'] = 0
     >>> d.at[d.shape[0]-1,'onset'] = (10-1)*2*5
     """
-    text = {"clasp": clasp_text, "rest": rest_text}
+    text = {"clasp": CLASP_TEXT, "rest": REST_TEXT}
     events = text.keys()
     event_list = [
-        {"event_name": e, "text": text[e], "onset": dur * (2 * i + ei)}
+        {"event_name": e,
+         "text": text[e],
+         "onset": dur * (2 * i + ei)}
         for i in range(n)
         for ei, e in enumerate(events)
     ]
     return pd.DataFrame(event_list)
 
 
+def args_to_settings():
+    """
+    Command line args to make it a little easier to speed run testing.
+    """
+
+    parser = argparse.ArgumentParser(description="Hand Clasp Task")
+    parser.add_argument("--subjid", default="XYZ", help="Subject ID")
+    parser.add_argument("--ntrials", type=int, default=DEFAULT_NTRIAL, help="Number of trials")
+    parser.add_argument("--dur", type=float, default=DEFAULT_DUR, help="Duration of each block in seconds")
+    parser.add_argument("--no-instructions", action="store_false", dest="instructions",
+                        help="Skip instructions at the beginning of the task")
+    args = parser.parse_args()
+
+    settings = {'subjid': args.subjid,
+                'ntrials': args.ntrials,
+                'dur': args.dur,
+                'instructions': args.instructions}
+    return settings
+
+
 def main():
     """
     Run the task.
     """
-    block_dur = 5
-    onset_df = gen_timing(2, block_dur)
-    hc = HandClasp(onset_df=onset_df)
 
+    settings = args_to_settings()
+
+    run_info = RunDialog(
+            extra_dict=settings,
+            order=['subjid', 'ntrials', 'dur', 'instructions'])
+
+    if not run_info.dlg_ok():
+        return
+
+    # pull in new settings
+    # make sure types are as expected after editing (as string)
+    settings = run_info.info
+    settings['ntrials'] = int(settings['ntrials'])
+    settings['dur'] = float(settings['dur'])
+
+    # use settings to pre-construct full timing schedule of task events
+    onset_df = gen_timing(settings['ntrials'], settings['dur'])
+
+    # and get a participant object for saving files
+    participant = run_info.mk_participant(['clasp'])
+
+    hc = HandClasp(onset_df=onset_df, participant=participant)
+    # escape quits
+    hc.gobal_quit_key()
+
+    # record timing to file and to standard out
+    logger = FileLogger()
+    logger.new(participant.log_path('subj_info'))
+    hc.externals.append(logger)
+    hc.externals.append(ExternalCom())
+
+    # instructins include specific generated information:
+    # how long an and how many trials
     instructions = [
         lambda: hc.instruction("This is the hand grasping task!"),
         lambda: hc.instruction(
-            "When the screen says 'grasp',\n"
-            + "make a fist and release.\n"
-            + f"Repeat for {block_dur} seconds\n\n\n"
+            f"When the screen says '{CLASP_TEXT}',\n"
+            + "continually make a fist and release.\n"
+            + f"Repeat for {settings.get('dur')} seconds\n\n\n"
             + "It is important to continue to keep your head still,\n"
             + "even when making a fist.\n"
             + "We want to get good picture of your brain!"
         ),
         lambda: hc.instruction(
-            "When the screen says 'relax',\n" + "rest your hand and stay still."
+            f"When the screen says '{REST_TEXT}',\n"
+            + "rest your hand and stay still."
         ),
         lambda: hc.instruction(f"We'll do this {onset_df.shape[0]//2} times."),
-        lambda: hc.instruction("graps = make fists\n" + "relax = rest\n\nReady?!"),
+        lambda: hc.instruction("graps = make many fists\n"
+                               + "relax = rest\n\n"
+                               + "Ready?!"),
     ]
-    hc.run_instructions(instructions)
 
-    hc.get_ready(triggers=TRIGGERS)
+    # if no instructions request, just show the last one
+    if not settings['instructions']:
+        instructions = instructions[-1:]
+
+    # ### START TASK ###
+
+    hc.run_instructions(instructions)
+    # wait for scanner trigger
+    hc.get_ready()
     # need to wait for last block to end
-    hc.run(end_wait=block_dur)
+    hc.run(end_wait=settings['dur'])
     hc.finished("Done!\nThank you!")
+
+    # save complete event info.
+    # includes run order expected and exact flip times
+    hc.onset_df.to_csv(participant.run_path('subj_info'))
 
 
 if __name__ == "__main__":
