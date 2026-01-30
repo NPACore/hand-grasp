@@ -18,8 +18,8 @@ import pandas as pd
 
 REST_TEXT = "Relax"   #: text displayed during rest/relax block
 CLASP_TEXT = "Grasp"  #: text displayed in make a fist block
-DEFAULT_NTRIAL = 10
-DEFAULT_DUR = 20
+DEFAULT_NTRIAL = 1 # number of rest+graps: 10 of each
+DEFAULT_DUR = 1 # seconds, 20 of rest, 20 of grasp"
 TRIGGERS = ["equal"]  #: what key advances the get ready screen?
 
 
@@ -43,20 +43,33 @@ class HandGrasp(LNCDTask):
 
     def __init__(self, *karg, **kargs):
         super().__init__(*karg, **kargs)
-        self.add_event_type("grasp", self.block, ["onset", "text"])
-        self.add_event_type("rest", self.block, ["onset", "text"])
+        self.add_event_type("grasp", self.grasp, ["onset", "text"])
+        self.add_event_type("rest", self.rest, ["onset", "text"])
 
-    def block(self, onset, msg):
+    def rest(self, onset, msg):
+        """Show grasp/relax text at specified time.
+        @param onset time to flip text on
+        @param msg   what text to show
+        """
+        # self.trialnum = self.trialnum + 1
+        self.msgbox.height = .5
+        self.msgbox.text = msg
+        self.msgbox.setColor([1,1,1],'rgb')
+        self.msgbox.draw()
+        # NB. msg here gets forward onto marks (file log)
+        return self.flip_at(onset, msg)
+    def grasp(self, onset, msg):
         """Show grasp/relax text at specified time.
         @param onset time to flip text on
         @param msg   what text to show
         """
         # self.trialnum = self.trialnum + 1
         self.msgbox.text = msg
+        self.msgbox.setColor([1,0,0],'rgb')
         self.msgbox.draw()
         # NB. msg here gets forward onto marks (file log)
         return self.flip_at(onset, msg)
-
+        
     def instruction(self, msg):
         """Show message and wait for any keyboard resonse.
         Return keyboard response for processsing with run_instructions
@@ -68,7 +81,10 @@ class HandGrasp(LNCDTask):
     def finished(self, msg):
         "Finish message in a new color."
         prev_bgcolor = self.win.color
-        self.win.color = "#666666"
+        self.msgbox.height = .1
+        self.msgbox.setColor([-1,-1,-1],'rgb')
+        self.win.setColor([.3,.3,.3],'rgb')
+
         self.win.flip()
         self.win.color = prev_bgcolor
         # ^ likely last flip don't need to change back. safer
@@ -99,7 +115,7 @@ def gen_timing(n, dur):
     >>> d.at[0,'onset'] = 0
     >>> d.at[d.shape[0]-1,'onset'] = (10-1)*2*5
     """
-    text = {"grasp": CLASP_TEXT, "rest": REST_TEXT}
+    text = {"rest": REST_TEXT, "grasp": CLASP_TEXT}
     events = text.keys()
     event_list = [
         {"event_name": e,
@@ -120,7 +136,7 @@ def args_to_settings():
     parser.add_argument("--subjid", default="XYZ", help="Subject ID")
     parser.add_argument("--ntrials", type=int, default=DEFAULT_NTRIAL, help="Number of trials")
     parser.add_argument("--dur", type=float, default=DEFAULT_DUR, help="Duration of each block in seconds")
-    parser.add_argument("--no-instructions", action="store_false", dest="instructions",
+    parser.add_argument("--no-instructions", default=False, action="store_true", dest="instructions",
                         help="Skip instructions at the beginning of the task")
     args = parser.parse_args()
 
@@ -190,12 +206,11 @@ def main():
     ]
 
     # if no instructions request, just show the last one
-    if not settings['instructions']:
-        instructions = instructions[-1:]
+    if settings['instructions']:
+        hc.run_instructions(instructions)
 
     # ### START TASK ###
 
-    hc.run_instructions(instructions)
     # wait for scanner trigger
     hc.get_ready()
     # need to wait for last block to end
