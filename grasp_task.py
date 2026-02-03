@@ -12,8 +12,11 @@
 import argparse
 import sys
 import psychopy
-import lncdtask
-from lncdtask.lncdtask import LNCDTask, RunDialog, FileLogger, ExternalCom
+from lncdtask.lncdtask import LNCDTask, FileLogger, ExternalCom
+try:
+    from lsncdtask.lncdtask import RunDialog 
+except:
+    pass
 import pandas as pd
 
 REST_TEXT = "Relax"   #: text displayed during rest/relax block
