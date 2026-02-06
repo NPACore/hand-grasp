@@ -13,7 +13,7 @@ import argparse
 import sys
 import psychopy
 import lncdtask
-from lncdtask.lncdtask import LNCDTask, RunDialog, FileLogger, ExternalCom
+from lncdtask.lncdtask import LNCDTask, RunDialog, FileLogger, ExternalCom, create_window
 import pandas as pd
 
 REST_TEXT = "Relax"  #: text displayed during rest/relax block
@@ -132,6 +132,13 @@ def args_to_settings():
         dest="annotate",
         help="Show TR flips in bottom corner",
     )
+    parser.add_argument(
+        "--no-fullscreen",
+        default=False,
+        action="store_true",
+        dest="no_fullscreen",
+        help="Show TR flips in bottom corner",
+    )
     args = parser.parse_args()
 
     settings = {
@@ -140,6 +147,7 @@ def args_to_settings():
         "ntr": args.trs,
         "annotate": args.annotate,
         "instructions": args.instructions,
+        "fullscreen": not args.no_fullscreen
     }
     return settings
 
@@ -152,7 +160,7 @@ def main():
     settings = args_to_settings()
 
     run_info = RunDialog(
-        extra_dict=settings, order=["subjid", "ntrials", "ntr", "instructions"]
+        extra_dict=settings, order=["subjid", "ntrials", "ntr","annotate", "instructions", "fullscreen"]
     )
 
     if not run_info.dlg_ok():
@@ -171,7 +179,11 @@ def main():
     # kludge: will popoulate as we go so output csv file still has data for GLM
     #         but timing will be determined dynamically/at run time by TR pulses
     empty_df = pd.DataFrame({"onset": [], "event_name": [], "onset0": []})
-    hc = HandGrasp(onset_df=empty_df)
+
+    win = None # let lncdtask figure it out
+    if not settings['fullscreen']:
+        win = create_window(False)
+    hc = HandGrasp(onset_df=empty_df, win=win)
 
     # escape quits
     hc.gobal_quit_key()
