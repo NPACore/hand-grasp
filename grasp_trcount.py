@@ -38,7 +38,7 @@ class HandGrasp(LNCDTask):
         # annotation for sequence info
         self.annote = psychopy.visual.TextStim(self.win, text="", name="annotation")
         self.annote.setColor([-0.8, -0.8, -0.8], "rgb")
-        self.annote.pos = (0.8, -0.8)  # bottom of screen
+        self.annote.pos = (0.5, -0.8)  # center-right, bottom of screen
 
     def block(self, onset, msg):
         """Show grasp/relax text at specified time.
@@ -197,7 +197,7 @@ def main():
         lambda: hc.instruction(
             f"When the screen says '{REST_TEXT}',\n" + "rest your hand and stay still."
         ),
-        lambda: hc.instruction(f"We'll do this {settings["ntrials"]} times."),
+        lambda: hc.instruction(f"We'll do this {settings.get('ntrials')} times."),
         lambda: hc.instruction(
             f"{GRASP_TEXT} = make many fists\n" + f"{REST_TEXT} = rest\n\n" + "Ready?!"
         ),
