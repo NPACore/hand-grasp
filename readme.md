@@ -4,6 +4,10 @@ Quick [psychopy](https://www.psychopy.org/) implementaiton using the [lncdtask](
   * `./grasp_trcount.py` - specify number of TRs per block
   * `./grasp_task.py` - specify duration of blocks
 
+```
+uv run --script ./grasp_trcount.py --no-dialog --no-logging --no-fullscreen --ntr 3 --ntrial 1 --annotate
+```
+
 ## Outputs
 
 ```

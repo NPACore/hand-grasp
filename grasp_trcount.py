@@ -102,9 +102,15 @@ class HandGrasp(LNCDTask):
         self.onset_df = pd.concat([self.onset_df, new_row])
 
 
-def args_to_settings():
+def args_to_settings(in_args=None) -> dict:
     """
     Command line args to make it a little easier to speed run testing.
+    @param in_args inputs for arg.parser
+    @return dict of run settings including
+            parameters: subjid, ntrials, ntr
+            Bool options: annotate, instructions, fullscreen
+
+    Note --no-dialog is tracked but not
     """
 
     parser = argparse.ArgumentParser(description="Hand Grasp Task")
@@ -139,32 +145,55 @@ def args_to_settings():
         dest="no_fullscreen",
         help="Show TR flips in bottom corner",
     )
-    args = parser.parse_args()
+    parser.add_argument(
+        "--no-dialog",
+        default=False,
+        action="store_true",
+        dest="no_dialog",
+        help="Disable dialog popup. Use command line args instead.",
+    )
+    parser.add_argument(
+        "--no-logging",
+        default=True,
+        action="store_false",
+        dest="logging",
+        help="Disable dialog popup. Use command line args instead.",
+    )
 
+    if in_args is None:
+        in_args = sys.argv
+    args = parser.parse_args(in_args)
+
+    # could use settings = vars(args) but want to switch name of no_fullscreen
     settings = {
         "subjid": args.subjid,
         "ntrials": args.ntrials,
         "ntr": args.trs,
         "annotate": args.annotate,
         "instructions": args.instructions,
-        "fullscreen": not args.no_fullscreen
+        "fullscreen": not args.no_fullscreen,
+        "no_dialog": args.no_dialog
     }
     return settings
 
 
-def main():
+def main(settings):
     """
     Run the task.
+    @param settings dict of parameters from args_to_settings
     """
 
-    settings = args_to_settings()
-
+    #: dialog's already up if seen, so dont provide option to toggle
+    #: logging disableing is only for testing. dont provide option for that (only in CLI params)
+    tweakable = {k: v for k,v in settings.items() if k not in ['no_dialog', 'logging']}
     run_info = RunDialog(
-        extra_dict=settings, order=["subjid", "ntrials", "ntr","annotate", "instructions", "fullscreen"]
+        extra_dict=tweakable, order=["subjid", "ntrials", "ntr","annotate", "instructions", "fullscreen"]
     )
 
-    if not run_info.dlg_ok():
-        return
+    if settings.get("no_dialog"):
+        pass # use whatever defaults we were given
+    elif not run_info.dlg_ok():
+        return False
 
     # pull in new settings
     # make sure types are as expected after editing (as string)
@@ -189,9 +218,10 @@ def main():
     hc.gobal_quit_key()
 
     # record timing to file and to standard out
-    logger = FileLogger()
-    logger.new(participant.log_path("grasp"))
-    hc.externals.append(logger)  # save events "marked" to a file
+    if settings.get("logging"):
+        logger = FileLogger()
+        logger.new(participant.log_path("grasp"))
+        hc.externals.append(logger)  # save events "marked" to a file
     hc.externals.append(ExternalCom())  # and print to terminal
 
     # instructins include specific generated information:
@@ -229,16 +259,19 @@ def main():
     # ### START TASK ###
     for block_i in range(settings["ntrials"]):
         for block_text in BLOCK_ORDER:
-            # drawing will flip after TR pulse recieved. A delay of 10ish milliseconds?
+            # drawing will flip after TR pulse recieved. Large (>100ms) delay
+            # between recieved and screen flip
+            #
             # will send externals (print and mark in file)
             # see block onset compared to "STARTING" onset
             if settings.get("annotate"):
                 hc.annote.text = (
-                    f"{block_i} x {block_text} {tr_times[0]:0.3f} {tr_times[1]:0.3f}"
+                    f"{block_i} 1? {block_text} {tr_times[0]:0.3f} {tr_times[1]:0.3f}"
                 )
             block_on_time = hc.block(0, block_text)
 
-            # have drawn and flipped. have some time to do computaiton before need to recieve key
+            # have drawn and flipped. have some time to do computaiton before expect to recieve next pulse as = key
+            # add timing to dataframe. will save out all as csv when tasks end
             hc.add_event(
                 onset=block_on_time.get("flip", 0),
                 event_name=block_text,
@@ -256,37 +289,46 @@ def main():
                 # tr_prev set by previous block
 
             # wait until we've seen enough TRs. log each one.
+            # TR pulse is given at start of volume acq. counting index is 0-based
             while block_ntr < settings["ntr"]:
                 psychopy.event.waitKeys(keyList=TRIGGERS)
                 tr_on = psychopy.core.getTime()
                 hc.mark_external(
-                    f"Pulse {block_ntr} for block {block_i} recieved {tr_on}"
+                    f"Pulse {block_ntr} for block {block_i} recieved {tr_on}; {tr_on-tr_prev:0.3f} secs"
                 )
 
                 # capture TR difference for logging and file name
-                mod_i = block_ntr % 2
+                # this is only hit on the very first two pulses
+                mod_i = (block_ntr+1) % 2
                 if tr_times[mod_i] == 0:
                     tr_times[mod_i] = tr_on - tr_prev
                     hc.mark_external(f"TR {mod_i} is {tr_times[mod_i]}")
-                tr_prev = tr_on
 
-                # only need once more, to capture second seen (but first in pair) TR
-                block_ntr = block_ntr + 1
 
-                # represent ever TR?
+                # add current TR annotation? must re-draw grasp/relax text with each TR
                 if settings.get("annotate"):
-                    hc.annote.text = f"{block_i} {block_ntr} {block_text} {tr_times[0]:0.3f} {tr_times[1]:0.3f}"
+                    hc.annote.text = f"{block_i} {block_ntr+1} {block_text} {tr_times[0]:0.3f} {tr_times[1]:0.3f}"
                     hc.annote.draw()
                     hc.msgbox.draw()
                     hc.win.flip()
 
+                # seen and optionally displayed this TR. prepare for next
+                # update for next iteration
+                tr_prev = tr_on
+                block_ntr = block_ntr + 1
+
+
+    psychopy.core.wait(tr_times[1]) # wait for last volume to acquire
     hc.finished("Done!\nThank you!")
 
     # save complete event info.
-    hc.onset_df.to_csv(
-        participant.run_path(f"grasp_tr1-{tr_times[0]:0.3f}_tr2-{tr_times[1]:0.3f}")
-    )
+    if settings.get("logging"):
+        hc.onset_df.to_csv(
+            participant.run_path(f"grasp_tr1-{tr_times[0]:0.3f}_tr2-{tr_times[1]:0.3f}")
+        )
 
 
 if __name__ == "__main__":
-    main()
+
+    settings = args_to_settings(sys.argv[1:])
+    main(settings)
