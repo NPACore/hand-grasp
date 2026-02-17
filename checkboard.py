@@ -129,10 +129,13 @@ def main(settings):
     hc.gobal_quit_key()
 
     # record timing to file and to standard out
-    if settings.get("logging"):
+    if settings.get("logging", True):
         logger = FileLogger()
-        logger.new(participant.log_path("grasp"))
+        logger.new(participant.log_path("checkers"))
         hc.externals.append(logger)  # save events "marked" to a file
+    else:
+        print("WARNING: no logging!")
+        print(settings)
     hc.externals.append(ExternalCom())  # and print to terminal
 
     # instructins include specific generated information:
@@ -159,11 +162,14 @@ def main(settings):
     hc.msgbox.text = ""
     hc.msgbox.draw()
 
+    is_first = True # first interation of block
+
     while hc.block_i / len(BLOCK_ORDER) < settings["ntrials"]:
         # flip screen at sim rate
         now = psychopy.core.getTime()
         if hc.block_label != REST_TEXT and now - last_flip >= STIM_PER_SEC:
-            draw_checkers(hc.rect, stim_i % 2)
+            invert = stim_i % 2 # offset/inverted?
+            draw_checkers(hc.rect, invert)
             stim_i += 1
 
             if settings.get("annotate"):
@@ -171,6 +177,7 @@ def main(settings):
 
             hc.win.flip()
             last_flip = psychopy.core.getTime()
+            hc.mark_external(f"checkers {invert} {stim_i}")
 
         elif hc.block_label == REST_TEXT:
             hc.msgbox.text = REST_TEXT
@@ -185,8 +192,11 @@ def main(settings):
             # checkers but not time for checkboard flip
             pass
 
-        if hc.block_trs == 0:
+        if is_first:
             hc.record_event(last_flip)
+            hc.mark_external(f"block {hc.block_label}")
+            is_first = False
+
 
         # track TR recieved
         keys = psychopy.event.getKeys(keyList=TRIGGERS)
@@ -194,18 +204,25 @@ def main(settings):
             if hc.tr_times[1] == 0:
                 hc.tr_times[hc.block_trs % 2] = now - prev_tr
             prev_tr = now
-            hc.mark_external(f"pulse {now - hc.start_pulse_time:-0.3f} ({now})")
+            hc.mark_external(f"pulse {now - prev_tr:-0.3f} ({now:0.4f})")
             hc.block_trs += 1
             if hc.block_trs > settings["ntr"]:
+                stim_i = 0
+                is_first = True # for logging first block flip
+
                 hc.block_trs = 0
                 hc.block_i += 1
                 hc.block_label = BLOCK_ORDER[hc.block_i % len(BLOCK_ORDER)]
+
+                # BUG: like instructions. not sure why this stays on
+                hc.msgbox.text = ""
+
 
     psychopy.core.wait(tr_times[1])  # wait for last volume to acquire
     hc.finished("Done!\nThank you!")
 
     # save complete event info.
-    if settings.get("logging"):
+    if settings.get("logging", True):
         hc.onset_df.to_csv(
             participant.run_path(
                 f"checkers_tr1-{hc.tr_times[0]:0.3f}_tr2-{hc.tr_times[1]:0.3f}"

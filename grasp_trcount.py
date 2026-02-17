@@ -172,7 +172,8 @@ def args_to_settings(in_args=None) -> dict:
         "annotate": args.annotate,
         "instructions": args.instructions,
         "fullscreen": not args.no_fullscreen,
-        "no_dialog": args.no_dialog
+        "no_dialog": args.no_dialog,
+        "logging":  args.logging
     }
     return settings
 
