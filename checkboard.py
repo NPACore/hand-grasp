@@ -14,16 +14,21 @@ import argparse
 import sys
 import psychopy
 import lncdtask
-from lncdtask.lncdtask import LNCDTask, RunDialog, FileLogger, ExternalCom, create_window
+from lncdtask.lncdtask import (
+    LNCDTask,
+    RunDialog,
+    FileLogger,
+    ExternalCom,
+    create_window,
+)
 import pandas as pd
 import numpy as np
 from grasp_trcount import HandGrasp, args_to_settings
-import psychopy.visual.radial
 
-STIM_PER_SEC=1/10 #: flip checkers every 10 Hz
-CHECKER_SIZE=.2 #: size of single checker rectangle. (fullsreen=2)
-REST_TEXT = "Relax"  #: text displayed during rest/relax block
-ON_TEXT = "Grid"  #: text displayed in make a fist block
+STIM_PER_SEC = 1 / 8  #: flip checkers every 8 Hz
+CHECKER_SIZE = 0.2  #: size of single checker rectangle. (fullsreen=2)
+REST_TEXT = "Relax"  #: Text displayed during rest/relax block
+ON_TEXT = "Grid"  #: Never shown. used only in block type check
 BLOCK_ORDER = (ON_TEXT, REST_TEXT)  #: sequence
 DEFAULT_NTRIAL = 1  #: number of rest+graps pairs. NTRIAL of each.
 DEFAULT_NTR = 4  #: number of counted pulses per individual block
@@ -35,12 +40,14 @@ TRIGGERS = [
 
 def draw_checkers(rect, offset=0, size=CHECKER_SIZE):
     # -1,-1 is left, bottom. x is first, left<->right
-    for i, x in enumerate(np.arange(-1-size/2, 1, size*2)):
-        for y in np.arange(-1+size/2, 1, size*2):
-            rect.pos = (x+offset*size, y)
+    for i, x in enumerate(np.arange(-1 - size / 2, 1, size * 2)):
+        for y in np.arange(-1 + size / 2, 1, size * 2):
+            rect.pos = (x + offset * size, y)
             rect.draw()
-            rect.pos = (x+size+offset*size, y+size)
+            rect.pos = (x + size + offset * size, y + size)
             rect.draw()
+
+
 class Checkers(HandGrasp):
     """
     Extending HandGrasp (LNCDTask) to display checkerboard.
@@ -50,7 +57,7 @@ class Checkers(HandGrasp):
         super().__init__(*karg, **kargs)
 
         # for checkers
-        self.rect = psychopy.visual.Rect(self.win, size=(.2, .2), fillColor="white")
+        self.rect = psychopy.visual.Rect(self.win, size=(0.2, 0.2), fillColor="white")
 
         # for annotating trial info
         self.annote = psychopy.visual.TextStim(self.win, text="", name="annotation")
@@ -63,8 +70,8 @@ class Checkers(HandGrasp):
         self.block_label = BLOCK_ORDER[0]
         self.start_pulse_time = 0
 
-        #grating_res = 256
-        #self.stim = psychopy.visual.RadialStim(win=self.win, units="pix", size=(grating_res, grating_res))
+        # grating_res = 256
+        # self.stim = psychopy.visual.RadialStim(win=self.win, units="pix", size=(grating_res, grating_res))
 
     def draw_annote(self):
         self.annote.text = f"{self.block_trs}@{self.block_i}={self.block_label} {self.tr_times[0]:0.3f} {self.tr_times[1]:0.3f}"
@@ -72,11 +79,11 @@ class Checkers(HandGrasp):
         self.msgbox.draw()
 
     def record_event(self, flip_time):
-            self.add_event(
-                onset=flip_time,
-                event_name=self.block_label,
-                start_time=self.start_pulse_time)
-
+        self.add_event(
+            onset=flip_time,
+            event_name=self.block_label,
+            start_time=self.start_pulse_time,
+        )
 
 
 def main(settings):
@@ -87,14 +94,15 @@ def main(settings):
 
     #: dialog's already up if seen, so dont provide option to toggle
     #: logging disableing is only for testing. dont provide option for that (only in CLI params)
-    tweakable = {k: v for k,v in settings.items() if k not in ['no_dialog', 'logging']}
+    tweakable = {k: v for k, v in settings.items() if k not in ["no_dialog", "logging"]}
     run_info = RunDialog(
         # ntrials should be nblocks
-        extra_dict=tweakable, order=["subjid", "ntrials", "ntr","annotate", "instructions", "fullscreen"]
+        extra_dict=tweakable,
+        order=["subjid", "ntrials", "ntr", "annotate", "instructions", "fullscreen"],
     )
 
     if settings.get("no_dialog"):
-        pass # use whatever defaults we were given
+        pass  # use whatever defaults we were given
     elif not run_info.dlg_ok():
         return False
 
@@ -112,8 +120,8 @@ def main(settings):
     #         but timing will be determined dynamically/at run time by TR pulses
     empty_df = pd.DataFrame({"onset": [], "event_name": [], "onset0": []})
 
-    win = None # let lncdtask figure it out
-    if not settings['fullscreen']:
+    win = None  # let lncdtask figure it out
+    if not settings["fullscreen"]:
         win = create_window(False)
     hc = Checkers(onset_df=empty_df, win=win)
 
@@ -142,7 +150,7 @@ def main(settings):
     # wait for scanner trigger.
     # This is pulse is recieved precieding the first volume that's collected
     hc.start_pulse_time = hc.get_ready()
-    prev_tr = hc.start_pulse_time # for TR calc. only on first 2 trs
+    prev_tr = hc.start_pulse_time  # for TR calc. only on first 2 trs
     hc.mark_external(f"STARTING: recieved first TR pulse {hc.start_pulse_time}")
     stim_i = 0
     last_flip = hc.start_pulse_time
@@ -151,11 +159,11 @@ def main(settings):
     hc.msgbox.text = ""
     hc.msgbox.draw()
 
-    while hc.block_i/len(BLOCK_ORDER) < settings["ntrials"]:
+    while hc.block_i / len(BLOCK_ORDER) < settings["ntrials"]:
         # flip screen at sim rate
         now = psychopy.core.getTime()
         if hc.block_label != REST_TEXT and now - last_flip >= STIM_PER_SEC:
-            draw_checkers(hc.rect, stim_i%2)
+            draw_checkers(hc.rect, stim_i % 2)
             stim_i += 1
 
             if settings.get("annotate"):
@@ -167,7 +175,7 @@ def main(settings):
         elif hc.block_label == REST_TEXT:
             hc.msgbox.text = REST_TEXT
             hc.msgbox.height = 0.5
-            hc.msgbox.setColor([1, 1, 1], "rgb") # white
+            hc.msgbox.setColor([1, 1, 1], "rgb")  # white
             hc.msgbox.draw()
             if settings.get("annotate"):
                 hc.draw_annote()
@@ -179,7 +187,6 @@ def main(settings):
 
         if hc.block_trs == 0:
             hc.record_event(last_flip)
-
 
         # track TR recieved
         keys = psychopy.event.getKeys(keyList=TRIGGERS)
@@ -194,13 +201,15 @@ def main(settings):
                 hc.block_i += 1
                 hc.block_label = BLOCK_ORDER[hc.block_i % len(BLOCK_ORDER)]
 
-    psychopy.core.wait(tr_times[1]) # wait for last volume to acquire
+    psychopy.core.wait(tr_times[1])  # wait for last volume to acquire
     hc.finished("Done!\nThank you!")
 
     # save complete event info.
     if settings.get("logging"):
         hc.onset_df.to_csv(
-            participant.run_path(f"grasp_tr1-{tr_times[0]:0.3f}_tr2-{tr_times[1]:0.3f}")
+            participant.run_path(
+                f"checkers_tr1-{hc.tr_times[0]:0.3f}_tr2-{hc.tr_times[1]:0.3f}"
+            )
         )
 
 
