@@ -8,6 +8,8 @@ Quick [psychopy](https://www.psychopy.org/) implementaiton using the [lncdtask](
 uv run --script ./grasp_trcount.py --no-dialog --no-logging --no-fullscreen --ntr 3 --ntrial 1 --annotate
 ```
 
+Separetly, see [`snd_2026/`](snd_2026/) for an audio driven version created with the Psychopy GUI designer
+
 ## Outputs
 
 ```
