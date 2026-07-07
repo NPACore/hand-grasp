@@ -8,7 +8,7 @@
     <Param val="u'data/%s_%s_%s' % (expInfo['participant'], expName, expInfo['date'])" valType="code" updates="None" name="Data filename"/>
     <Param val="True" valType="bool" updates="None" name="Enable Escape"/>
     <Param val="Thank you for your patience." valType="str" updates="None" name="End Message"/>
-    <Param val="{'participant':'f&quot;{randint(0, 999999):06.0f}&quot;', 'session':'001'}" valType="code" updates="None" name="Experiment info"/>
+    <Param val="{'participant': 'f&quot;{randint(0, 999999):06.0f}&quot;', 'session': '001', 'nblock': '10', 'tr_reps': '15', 'TR': '1.3'}" valType="code" updates="None" name="Experiment info"/>
     <Param val="True" valType="bool" updates="None" name="Force stereo"/>
     <Param val="True" valType="bool" updates="None" name="Full-screen window"/>
     <Param val="" valType="str" updates="None" name="HTML path"/>
@@ -26,7 +26,7 @@
     <Param val="False" valType="bool" updates="None" name="Show mouse"/>
     <Param val="height" valType="str" updates="None" name="Units"/>
     <Param val="" valType="str" updates="None" name="Use version"/>
-    <Param val="(1024, 768)" valType="list" updates="None" name="Window size (pixels)"/>
+    <Param val="[1920, 1080]" valType="list" updates="None" name="Window size (pixels)"/>
     <Param val="none" valType="str" updates="None" name="backgroundFit"/>
     <Param val="" valType="str" updates="None" name="backgroundImg"/>
     <Param val="avg" valType="str" updates="None" name="blendMode"/>
@@ -47,6 +47,7 @@
     <Param val="RIGHT_EYE" valType="str" updates="None" name="elTrackEyes"/>
     <Param val="PUPIL_CR_TRACKING" valType="str" updates="None" name="elTrackingMode"/>
     <Param val="SoundTest" valType="str" updates="None" name="expName"/>
+    <Param val="" valType="str" updates="None" name="expVersion"/>
     <Param val="on Sync" valType="str" updates="None" name="exportHTML"/>
     <Param val="None" valType="str" updates="None" name="eyetracker"/>
     <Param val="" valType="code" updates="None" name="frameRate"/>
@@ -56,7 +57,7 @@
     <Param val="ioHub" valType="str" updates="None" name="keyboardBackend"/>
     <Param val="info" valType="code" updates="None" name="logging level"/>
     <Param val="True" valType="bool" updates="None" name="measureFrameRate"/>
-    <Param val="MIDDLE_BUTTON" valType="list" updates="None" name="mgBlink"/>
+    <Param val="('MIDDLE_BUTTON',)" valType="list" updates="None" name="mgBlink"/>
     <Param val="CONTINUOUS" valType="str" updates="None" name="mgMove"/>
     <Param val="0.5" valType="num" updates="None" name="mgSaccade"/>
     <Param val="neon.local" valType="str" updates="None" name="plCompanionAddress"/>
@@ -70,7 +71,7 @@
     <Param val="1000" valType="num" updates="None" name="plPupilRemoteTimeoutMs"/>
     <Param val="False" valType="bool" updates="None" name="plPupillometryOnly"/>
     <Param val="psychopy_iohub_surface" valType="str" updates="None" name="plSurfaceName"/>
-    <Param val="0" valType="code" updates="None" name="runMode"/>
+    <Param val="1" valType="code" updates="None" name="runMode"/>
     <Param val="False" valType="bool" updates="None" name="rush"/>
     <Param val="time" valType="str" updates="None" name="sortColumns"/>
     <Param val="" valType="str" updates="None" name="tbLicenseFile"/>
@@ -94,27 +95,9 @@
         <Param val="True" valType="bool" updates="None" name="saveStartStop"/>
         <Param val="" valType="code" updates="constant" name="skipIf"/>
         <Param val="duration (s)" valType="str" updates="None" name="stopType"/>
-        <Param val="$TR" valType="code" updates="constant" name="stopVal"/>
+        <Param val="" valType="code" updates="constant" name="stopVal"/>
         <Param val="False" valType="bool" updates="None" name="useWindowParams"/>
       </RoutineSettingsComponent>
-      <SoundComponent name="graspSnd" plugin="None">
-        <Param val="" valType="str" updates="None" name="deviceLabel"/>
-        <Param val="False" valType="bool" updates="None" name="disabled"/>
-        <Param val="" valType="code" updates="None" name="durationEstim"/>
-        <Param val="True" valType="bool" updates="constant" name="hamming"/>
-        <Param val="graspSnd" valType="code" updates="None" name="name"/>
-        <Param val="True" valType="bool" updates="None" name="saveStartStop"/>
-        <Param val="mixkit-elevator-tone-2863.wav" valType="str" updates="set every repeat" name="sound"/>
-        <Param val="-1" valType="code" updates="None" name="speakerIndex"/>
-        <Param val="" valType="code" updates="None" name="startEstim"/>
-        <Param val="time (s)" valType="str" updates="None" name="startType"/>
-        <Param val="0.0" valType="code" updates="None" name="startVal"/>
-        <Param val="duration (s)" valType="str" updates="None" name="stopType"/>
-        <Param val="" valType="code" updates="constant" name="stopVal"/>
-        <Param val="True" valType="bool" updates="constant" name="stopWithRoutine"/>
-        <Param val="True" valType="bool" updates="constant" name="syncScreenRefresh"/>
-        <Param val="1" valType="num" updates="constant" name="volume"/>
-      </SoundComponent>
       <TextComponent name="GraspDisplay" plugin="None">
         <Param val="white" valType="color" updates="constant" name="color"/>
         <Param val="rgb" valType="str" updates="constant" name="colorSpace"/>
@@ -137,11 +120,49 @@
         <Param val="duration (s)" valType="str" updates="None" name="stopType"/>
         <Param val="" valType="code" updates="constant" name="stopVal"/>
         <Param val="True" valType="bool" updates="None" name="syncScreenRefresh"/>
-        <Param val="$f&quot;GRASP\n rep {grasp_block.thisN+1}/{grasp_block.nTotal} block {full_block.thisN+1}/{nblock} @ TR {TR}s&quot;" valType="str" updates="set every repeat" name="text"/>
+        <Param val="$f&quot;GRASP\n\nrep {grasp_block.thisN+1}/{grasp_block.nTotal}\nblock {full_block.thisN+1}/{nblock} @ TR {TR}s\n\nTR{grasp_block.thisN+1 + (2*tr_reps*full_block.thisN)} {core.getTime() - starttime:.2f} s&quot;" valType="str" updates="set every repeat" name="text"/>
         <Param val="from exp settings" valType="str" updates="None" name="units"/>
         <Param val="" valType="code" updates="None" name="validator"/>
         <Param val="" valType="num" updates="constant" name="wrapWidth"/>
       </TextComponent>
+      <SoundComponent name="graspSnd" plugin="None">
+        <Param val="" valType="str" updates="None" name="deviceLabel"/>
+        <Param val="False" valType="bool" updates="None" name="disabled"/>
+        <Param val="" valType="code" updates="None" name="durationEstim"/>
+        <Param val="True" valType="bool" updates="constant" name="hamming"/>
+        <Param val="graspSnd" valType="code" updates="None" name="name"/>
+        <Param val="True" valType="bool" updates="None" name="saveStartStop"/>
+        <Param val="mixkit-elevator-tone-2863.wav" valType="str" updates="set every repeat" name="sound"/>
+        <Param val="-1" valType="code" updates="None" name="speakerIndex"/>
+        <Param val="" valType="code" updates="None" name="startEstim"/>
+        <Param val="time (s)" valType="str" updates="None" name="startType"/>
+        <Param val="0.0" valType="code" updates="None" name="startVal"/>
+        <Param val="duration (s)" valType="str" updates="None" name="stopType"/>
+        <Param val="" valType="code" updates="constant" name="stopVal"/>
+        <Param val="True" valType="bool" updates="constant" name="stopWithRoutine"/>
+        <Param val="True" valType="bool" updates="constant" name="syncScreenRefresh"/>
+        <Param val="1" valType="num" updates="constant" name="volume"/>
+      </SoundComponent>
+      <KeyboardComponent name="grasp_tr_lock" plugin="None">
+        <Param val="trigger_keys" valType="list" updates="set every repeat" name="allowedKeys"/>
+        <Param val="" valType="str" updates="constant" name="correctAns"/>
+        <Param val="" valType="str" updates="None" name="deviceLabel"/>
+        <Param val="False" valType="bool" updates="None" name="disabled"/>
+        <Param val="True" valType="bool" updates="constant" name="discard previous"/>
+        <Param val="" valType="code" updates="None" name="durationEstim"/>
+        <Param val="True" valType="bool" updates="constant" name="forceEndRoutine"/>
+        <Param val="grasp_tr_lock" valType="code" updates="None" name="name"/>
+        <Param val="release" valType="str" updates="constant" name="registerOn"/>
+        <Param val="True" valType="bool" updates="None" name="saveStartStop"/>
+        <Param val="" valType="code" updates="None" name="startEstim"/>
+        <Param val="time (s)" valType="str" updates="None" name="startType"/>
+        <Param val="0.0" valType="code" updates="None" name="startVal"/>
+        <Param val="duration (s)" valType="str" updates="None" name="stopType"/>
+        <Param val="" valType="code" updates="constant" name="stopVal"/>
+        <Param val="last key" valType="str" updates="constant" name="store"/>
+        <Param val="False" valType="bool" updates="constant" name="storeCorrect"/>
+        <Param val="True" valType="bool" updates="constant" name="syncScreenRefresh"/>
+      </KeyboardComponent>
     </Routine>
     <Routine name="rest">
       <RoutineSettingsComponent name="rest" plugin="None">
@@ -157,7 +178,7 @@
         <Param val="True" valType="bool" updates="None" name="saveStartStop"/>
         <Param val="" valType="code" updates="constant" name="skipIf"/>
         <Param val="duration (s)" valType="str" updates="None" name="stopType"/>
-        <Param val="$TR" valType="code" updates="constant" name="stopVal"/>
+        <Param val="" valType="code" updates="constant" name="stopVal"/>
         <Param val="False" valType="bool" updates="None" name="useWindowParams"/>
       </RoutineSettingsComponent>
       <TextComponent name="RestText" plugin="None">
@@ -182,11 +203,31 @@
         <Param val="duration (s)" valType="str" updates="None" name="stopType"/>
         <Param val="" valType="code" updates="constant" name="stopVal"/>
         <Param val="True" valType="bool" updates="None" name="syncScreenRefresh"/>
-        <Param val="$f&quot;REST\n\nrep {rest_block.thisN+1}/{rest_block.nTotal}\nblock {full_block.thisN+1}/{nblock} @ TR {TR}s&quot;" valType="str" updates="set every repeat" name="text"/>
+        <Param val="$f&quot;REST\n\nrep {rest_block.thisN+1}/{rest_block.nTotal}\nblock {full_block.thisN+1}/{nblock} @ TR {TR}s\n\nTR {tr_reps + rest_block.thisN+1 + (2*tr_reps*full_block.thisN)} {core.getTime() - starttime:.2f} s&quot;" valType="str" updates="set every repeat" name="text"/>
         <Param val="from exp settings" valType="str" updates="None" name="units"/>
         <Param val="" valType="code" updates="None" name="validator"/>
         <Param val="" valType="num" updates="constant" name="wrapWidth"/>
       </TextComponent>
+      <KeyboardComponent name="rest_tr_lock" plugin="None">
+        <Param val="trigger_keys" valType="list" updates="constant" name="allowedKeys"/>
+        <Param val="" valType="str" updates="constant" name="correctAns"/>
+        <Param val="" valType="str" updates="None" name="deviceLabel"/>
+        <Param val="False" valType="bool" updates="None" name="disabled"/>
+        <Param val="True" valType="bool" updates="constant" name="discard previous"/>
+        <Param val="" valType="code" updates="None" name="durationEstim"/>
+        <Param val="True" valType="bool" updates="constant" name="forceEndRoutine"/>
+        <Param val="rest_tr_lock" valType="code" updates="None" name="name"/>
+        <Param val="release" valType="str" updates="constant" name="registerOn"/>
+        <Param val="True" valType="bool" updates="None" name="saveStartStop"/>
+        <Param val="" valType="code" updates="None" name="startEstim"/>
+        <Param val="time (s)" valType="str" updates="None" name="startType"/>
+        <Param val="0.0" valType="code" updates="None" name="startVal"/>
+        <Param val="duration (s)" valType="str" updates="None" name="stopType"/>
+        <Param val="" valType="code" updates="constant" name="stopVal"/>
+        <Param val="last key" valType="str" updates="constant" name="store"/>
+        <Param val="False" valType="bool" updates="constant" name="storeCorrect"/>
+        <Param val="True" valType="bool" updates="constant" name="syncScreenRefresh"/>
+      </KeyboardComponent>
     </Routine>
     <Routine name="settings">
       <RoutineSettingsComponent name="settings" plugin="None">
@@ -216,7 +257,7 @@
         <Param val="False" valType="bool" updates="constant" name="saveStartRoutine"/>
         <Param val="True" valType="bool" updates="None" name="saveStartStop"/>
         <Param val="" valType="code" updates="None" name="startEstim"/>
-        <Param val="1.3" valType="code" updates="constant" name="startExpValue"/>
+        <Param val="float(expInfo.get('TR',1.3))" valType="code" updates="constant" name="startExpValue"/>
         <Param val="" valType="code" updates="None" name="startFrameValue"/>
         <Param val="" valType="code" updates="constant" name="startRoutineValue"/>
         <Param val="time (s)" valType="str" updates="None" name="startType"/>
@@ -236,7 +277,7 @@
         <Param val="False" valType="bool" updates="constant" name="saveStartRoutine"/>
         <Param val="True" valType="bool" updates="None" name="saveStartStop"/>
         <Param val="" valType="code" updates="None" name="startEstim"/>
-        <Param val="7" valType="code" updates="constant" name="startExpValue"/>
+        <Param val="int(expInfo.get('nblock',10))" valType="code" updates="constant" name="startExpValue"/>
         <Param val="" valType="code" updates="None" name="startFrameValue"/>
         <Param val="" valType="code" updates="constant" name="startRoutineValue"/>
         <Param val="time (s)" valType="str" updates="None" name="startType"/>
@@ -256,7 +297,7 @@
         <Param val="False" valType="bool" updates="constant" name="saveStartRoutine"/>
         <Param val="True" valType="bool" updates="None" name="saveStartStop"/>
         <Param val="" valType="code" updates="None" name="startEstim"/>
-        <Param val="5" valType="code" updates="constant" name="startExpValue"/>
+        <Param val="int(expInfo['tr_reps'])" valType="code" updates="constant" name="startExpValue"/>
         <Param val="" valType="code" updates="None" name="startFrameValue"/>
         <Param val="" valType="code" updates="constant" name="startRoutineValue"/>
         <Param val="time (s)" valType="str" updates="None" name="startType"/>
@@ -277,6 +318,26 @@
         <Param val="True" valType="bool" updates="None" name="saveStartStop"/>
         <Param val="" valType="code" updates="None" name="startEstim"/>
         <Param val="['equal']" valType="code" updates="constant" name="startExpValue"/>
+        <Param val="" valType="code" updates="None" name="startFrameValue"/>
+        <Param val="" valType="code" updates="constant" name="startRoutineValue"/>
+        <Param val="time (s)" valType="str" updates="None" name="startType"/>
+        <Param val="" valType="code" updates="None" name="startVal"/>
+        <Param val="duration (s)" valType="str" updates="None" name="stopType"/>
+        <Param val="" valType="code" updates="constant" name="stopVal"/>
+        <Param val="False" valType="bool" updates="None" name="syncScreenRefresh"/>
+      </VariableComponent>
+      <VariableComponent name="starttime" plugin="None">
+        <Param val="False" valType="bool" updates="None" name="disabled"/>
+        <Param val="" valType="code" updates="None" name="durationEstim"/>
+        <Param val="starttime" valType="code" updates="None" name="name"/>
+        <Param val="False" valType="bool" updates="constant" name="saveEndExp"/>
+        <Param val="True" valType="bool" updates="constant" name="saveEndRoutine"/>
+        <Param val="never" valType="str" updates="constant" name="saveFrameValue"/>
+        <Param val="False" valType="bool" updates="constant" name="saveStartExp"/>
+        <Param val="False" valType="bool" updates="constant" name="saveStartRoutine"/>
+        <Param val="True" valType="bool" updates="None" name="saveStartStop"/>
+        <Param val="" valType="code" updates="None" name="startEstim"/>
+        <Param val="0" valType="code" updates="constant" name="startExpValue"/>
         <Param val="" valType="code" updates="None" name="startFrameValue"/>
         <Param val="" valType="code" updates="constant" name="startRoutineValue"/>
         <Param val="time (s)" valType="str" updates="None" name="startType"/>
@@ -331,7 +392,7 @@
         <Param val="" valType="num" updates="constant" name="wrapWidth"/>
       </TextComponent>
       <KeyboardComponent name="key_resp" plugin="None">
-        <Param val="trigger_keys" valType="list" updates="constant" name="allowedKeys"/>
+        <Param val="trigger_keys" valType="list" updates="set every repeat" name="allowedKeys"/>
         <Param val="" valType="str" updates="constant" name="correctAns"/>
         <Param val="" valType="str" updates="None" name="deviceLabel"/>
         <Param val="False" valType="bool" updates="None" name="disabled"/>
@@ -339,6 +400,153 @@
         <Param val="" valType="code" updates="None" name="durationEstim"/>
         <Param val="True" valType="bool" updates="constant" name="forceEndRoutine"/>
         <Param val="key_resp" valType="code" updates="None" name="name"/>
+        <Param val="release" valType="str" updates="constant" name="registerOn"/>
+        <Param val="True" valType="bool" updates="None" name="saveStartStop"/>
+        <Param val="" valType="code" updates="None" name="startEstim"/>
+        <Param val="time (s)" valType="str" updates="None" name="startType"/>
+        <Param val="0.0" valType="code" updates="None" name="startVal"/>
+        <Param val="duration (s)" valType="str" updates="None" name="stopType"/>
+        <Param val="" valType="code" updates="constant" name="stopVal"/>
+        <Param val="last key" valType="str" updates="constant" name="store"/>
+        <Param val="False" valType="bool" updates="constant" name="storeCorrect"/>
+        <Param val="True" valType="bool" updates="constant" name="syncScreenRefresh"/>
+      </KeyboardComponent>
+      <CodeComponent name="code" plugin="None">
+        <Param val="" valType="extendedCode" updates="constant" name="Before Experiment"/>
+        <Param val="" valType="extendedCode" updates="constant" name="Before JS Experiment"/>
+        <Param val="" valType="extendedCode" updates="constant" name="Begin Experiment"/>
+        <Param val="" valType="extendedCode" updates="constant" name="Begin JS Experiment"/>
+        <Param val="" valType="extendedCode" updates="constant" name="Begin JS Routine"/>
+        <Param val="" valType="extendedCode" updates="constant" name="Begin Routine"/>
+        <Param val="Auto-&gt;JS" valType="str" updates="None" name="Code Type"/>
+        <Param val="" valType="extendedCode" updates="constant" name="Each Frame"/>
+        <Param val="" valType="extendedCode" updates="constant" name="Each JS Frame"/>
+        <Param val="" valType="extendedCode" updates="constant" name="End Experiment"/>
+        <Param val="" valType="extendedCode" updates="constant" name="End JS Experiment"/>
+        <Param val="starttime = core.getTime();&amp;#10;" valType="extendedCode" updates="constant" name="End JS Routine"/>
+        <Param val="# kludge! should be able to get &amp;#10;#  start+duration of waitForScanner or time of keypress&amp;#10;# instead we get a manual timestamp into var defined in settings&amp;#10;starttime = core.getTime()" valType="extendedCode" updates="constant" name="End Routine"/>
+        <Param val="False" valType="bool" updates="None" name="disabled"/>
+        <Param val="code" valType="code" updates="None" name="name"/>
+      </CodeComponent>
+    </Routine>
+    <Routine name="instructions">
+      <RoutineSettingsComponent name="instructions" plugin="None">
+        <Param val="none" valType="str" updates="None" name="backgroundFit"/>
+        <Param val="" valType="str" updates="None" name="backgroundImg"/>
+        <Param val="$[0,0,0]" valType="color" updates="None" name="color"/>
+        <Param val="rgb" valType="str" updates="None" name="colorSpace"/>
+        <Param val="" valType="str" updates="constant" name="desc"/>
+        <Param val="False" valType="bool" updates="None" name="disabled"/>
+        <Param val="" valType="code" updates="None" name="durationEstim"/>
+        <Param val="False" valType="code" updates="None" name="forceNonSlip"/>
+        <Param val="instructions" valType="code" updates="None" name="name"/>
+        <Param val="True" valType="bool" updates="None" name="saveStartStop"/>
+        <Param val="" valType="code" updates="constant" name="skipIf"/>
+        <Param val="duration (s)" valType="str" updates="None" name="stopType"/>
+        <Param val="" valType="code" updates="constant" name="stopVal"/>
+        <Param val="False" valType="bool" updates="None" name="useWindowParams"/>
+      </RoutineSettingsComponent>
+      <KeyboardComponent name="instr_wait" plugin="None">
+        <Param val="'y','n','left','right','space','return'" valType="list" updates="constant" name="allowedKeys"/>
+        <Param val="" valType="str" updates="constant" name="correctAns"/>
+        <Param val="" valType="str" updates="None" name="deviceLabel"/>
+        <Param val="False" valType="bool" updates="None" name="disabled"/>
+        <Param val="True" valType="bool" updates="constant" name="discard previous"/>
+        <Param val="" valType="code" updates="None" name="durationEstim"/>
+        <Param val="True" valType="bool" updates="constant" name="forceEndRoutine"/>
+        <Param val="instr_wait" valType="code" updates="None" name="name"/>
+        <Param val="press" valType="str" updates="constant" name="registerOn"/>
+        <Param val="True" valType="bool" updates="None" name="saveStartStop"/>
+        <Param val="" valType="code" updates="None" name="startEstim"/>
+        <Param val="time (s)" valType="str" updates="None" name="startType"/>
+        <Param val="0.0" valType="code" updates="None" name="startVal"/>
+        <Param val="duration (s)" valType="str" updates="None" name="stopType"/>
+        <Param val="" valType="code" updates="constant" name="stopVal"/>
+        <Param val="last key" valType="str" updates="constant" name="store"/>
+        <Param val="False" valType="bool" updates="constant" name="storeCorrect"/>
+        <Param val="True" valType="bool" updates="constant" name="syncScreenRefresh"/>
+      </KeyboardComponent>
+      <TextComponent name="instr_text" plugin="None">
+        <Param val="black" valType="color" updates="constant" name="color"/>
+        <Param val="rgb" valType="str" updates="constant" name="colorSpace"/>
+        <Param val="1" valType="num" updates="constant" name="contrast"/>
+        <Param val="False" valType="bool" updates="None" name="disabled"/>
+        <Param val="False" valType="code" updates="constant" name="draggable"/>
+        <Param val="" valType="code" updates="None" name="durationEstim"/>
+        <Param val="None" valType="str" updates="constant" name="flip"/>
+        <Param val="Arial" valType="str" updates="constant" name="font"/>
+        <Param val="LTR" valType="str" updates="None" name="languageStyle"/>
+        <Param val="0.05" valType="num" updates="constant" name="letterHeight"/>
+        <Param val="instr_text" valType="code" updates="None" name="name"/>
+        <Param val="" valType="num" updates="constant" name="opacity"/>
+        <Param val="0" valType="num" updates="constant" name="ori"/>
+        <Param val="(0, 0)" valType="list" updates="constant" name="pos"/>
+        <Param val="True" valType="bool" updates="None" name="saveStartStop"/>
+        <Param val="" valType="code" updates="None" name="startEstim"/>
+        <Param val="time (s)" valType="str" updates="None" name="startType"/>
+        <Param val="0.0" valType="code" updates="None" name="startVal"/>
+        <Param val="duration (s)" valType="str" updates="None" name="stopType"/>
+        <Param val="" valType="code" updates="constant" name="stopVal"/>
+        <Param val="True" valType="bool" updates="None" name="syncScreenRefresh"/>
+        <Param val="$f&quot;This is the hand grasp task\n\nWhen you hear the repeated tone:\n Squeeze your hand\n\nWhen there is no tone:\n  Rest\n\n\n[Push space to continue]\n\n{nblock} blocks of 2 events (graps,resp)*{tr_reps}\n nTRs ={nblock*2*tr_reps}\n @ {TR}s = {TR*nblock*2*tr_reps}s&quot;" valType="str" updates="set every repeat" name="text"/>
+        <Param val="from exp settings" valType="str" updates="None" name="units"/>
+        <Param val="" valType="code" updates="None" name="validator"/>
+        <Param val="" valType="num" updates="constant" name="wrapWidth"/>
+      </TextComponent>
+    </Routine>
+    <Routine name="done">
+      <RoutineSettingsComponent name="done" plugin="None">
+        <Param val="none" valType="str" updates="None" name="backgroundFit"/>
+        <Param val="" valType="str" updates="None" name="backgroundImg"/>
+        <Param val="$[0,0,0]" valType="color" updates="None" name="color"/>
+        <Param val="rgb" valType="str" updates="None" name="colorSpace"/>
+        <Param val="" valType="str" updates="constant" name="desc"/>
+        <Param val="False" valType="bool" updates="None" name="disabled"/>
+        <Param val="" valType="code" updates="None" name="durationEstim"/>
+        <Param val="False" valType="code" updates="None" name="forceNonSlip"/>
+        <Param val="done" valType="code" updates="None" name="name"/>
+        <Param val="True" valType="bool" updates="None" name="saveStartStop"/>
+        <Param val="" valType="code" updates="constant" name="skipIf"/>
+        <Param val="duration (s)" valType="str" updates="None" name="stopType"/>
+        <Param val="" valType="code" updates="constant" name="stopVal"/>
+        <Param val="False" valType="bool" updates="None" name="useWindowParams"/>
+      </RoutineSettingsComponent>
+      <TextComponent name="done_text" plugin="None">
+        <Param val="white" valType="color" updates="constant" name="color"/>
+        <Param val="rgb" valType="str" updates="constant" name="colorSpace"/>
+        <Param val="1" valType="num" updates="constant" name="contrast"/>
+        <Param val="False" valType="bool" updates="None" name="disabled"/>
+        <Param val="False" valType="code" updates="constant" name="draggable"/>
+        <Param val="" valType="code" updates="None" name="durationEstim"/>
+        <Param val="None" valType="str" updates="constant" name="flip"/>
+        <Param val="Arial" valType="str" updates="constant" name="font"/>
+        <Param val="LTR" valType="str" updates="None" name="languageStyle"/>
+        <Param val="0.05" valType="num" updates="constant" name="letterHeight"/>
+        <Param val="done_text" valType="code" updates="None" name="name"/>
+        <Param val="" valType="num" updates="constant" name="opacity"/>
+        <Param val="0" valType="num" updates="constant" name="ori"/>
+        <Param val="(0, 0)" valType="list" updates="constant" name="pos"/>
+        <Param val="True" valType="bool" updates="None" name="saveStartStop"/>
+        <Param val="" valType="code" updates="None" name="startEstim"/>
+        <Param val="time (s)" valType="str" updates="None" name="startType"/>
+        <Param val="0.0" valType="code" updates="None" name="startVal"/>
+        <Param val="duration (s)" valType="str" updates="None" name="stopType"/>
+        <Param val="" valType="code" updates="constant" name="stopVal"/>
+        <Param val="True" valType="bool" updates="None" name="syncScreenRefresh"/>
+        <Param val="$f&quot;Grasp task finished!\n\nEnd Time: {core.getTime()}\nStart time: {starttime}\nTotal Duration: {core.getTime()-starttime} + last tr ({TR}s)&quot;" valType="str" updates="set every repeat" name="text"/>
+        <Param val="from exp settings" valType="str" updates="None" name="units"/>
+        <Param val="" valType="code" updates="None" name="validator"/>
+        <Param val="" valType="num" updates="constant" name="wrapWidth"/>
+      </TextComponent>
+      <KeyboardComponent name="done_key" plugin="None">
+        <Param val="'y','n','left','right','space', 'return'" valType="list" updates="constant" name="allowedKeys"/>
+        <Param val="" valType="str" updates="constant" name="correctAns"/>
+        <Param val="" valType="str" updates="None" name="deviceLabel"/>
+        <Param val="False" valType="bool" updates="None" name="disabled"/>
+        <Param val="True" valType="bool" updates="constant" name="discard previous"/>
+        <Param val="" valType="code" updates="None" name="durationEstim"/>
+        <Param val="True" valType="bool" updates="constant" name="forceEndRoutine"/>
+        <Param val="done_key" valType="code" updates="None" name="name"/>
         <Param val="press" valType="str" updates="constant" name="registerOn"/>
         <Param val="True" valType="bool" updates="None" name="saveStartStop"/>
         <Param val="" valType="code" updates="None" name="startEstim"/>
@@ -354,6 +562,7 @@
   </Routines>
   <Flow>
     <Routine name="settings"/>
+    <Routine name="instructions"/>
     <Routine name="waitForScanner"/>
     <LoopInitiator loopType="TrialHandler" name="full_block">
       <Param name="Selected rows" updates="None" val="" valType="str"/>
@@ -393,5 +602,6 @@
     <Routine name="rest"/>
     <LoopTerminator name="rest_block"/>
     <LoopTerminator name="full_block"/>
+    <Routine name="done"/>
   </Flow>
 </PsychoPy2experiment>
